@@ -25,7 +25,7 @@ Rust program that displays key system information, such as operating system deta
 1. **Clone the repo**:
 
     ```bash
-    git clone https://github.com/yourusername/system-info
+    git clone https://github.com/AK1R4S4T0H/oxidize
     cd oxidize
     ```
 
@@ -40,6 +40,11 @@ Rust program that displays key system information, such as operating system deta
     ```bash
     ./target/release/oxidize
     ```
+    OR
+
+   ```plaintext
+   cargo run --release
+   ```
 
 ## Example Output
 
