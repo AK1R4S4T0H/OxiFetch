@@ -43,7 +43,6 @@ Rust program that displays key system information, such as operating system deta
 
 ## Example Output
 
-Here's what the output looks like:
 
 ```plaintext
     ________     ___    ___ ___  ________  ___  ________  _______      
