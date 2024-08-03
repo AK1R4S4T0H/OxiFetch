@@ -3,10 +3,10 @@ use std::fs;
 use std::error::Error;
 use std::process::Command;
 use users::{get_user_by_uid, get_current_uid};
-use users::os::unix::UserExt; // Import the UserExt trait for Unix-specific extensions
+use users::os::unix::UserExt; 
 
 
-/// Get the system uptime in hours and minutes
+/// system uptime in hours and minutes
 fn get_uptime() -> Result<String, Box<dyn Error>> {
     let uptime_content = fs::read_to_string("/proc/uptime")?;
     let uptime_seconds = uptime_content
@@ -20,7 +20,7 @@ fn get_uptime() -> Result<String, Box<dyn Error>> {
     Ok(format!("{:.0} hours, {:.0} minutes", hours, minutes))
 }
 
-/// Retrieve the distribution name from /etc/os-release
+/// distribution name from /etc/os-release
 fn get_distro() -> Result<String, Box<dyn Error>> {
     let os_release_content = fs::read_to_string("/etc/os-release")?;
     for line in os_release_content.lines() {
@@ -35,7 +35,7 @@ fn get_distro() -> Result<String, Box<dyn Error>> {
     Ok("Unknown".to_string())
 }
 
-/// Get the current shell for the user
+/// current shell
 fn get_shell() -> String {
     if let Some(user) = get_user_by_uid(get_current_uid()) {
         user.shell().to_string_lossy().into_owned()
@@ -44,7 +44,7 @@ fn get_shell() -> String {
     }
 }
 
-/// Determine the terminal emulator by examining the parent process
+/// terminal emulator
 fn get_terminal() -> Result<String, Box<dyn Error>> {
     let tty_output = Command::new("ps").arg("-p").arg("$(echo $PPID)").arg("-o").arg("comm=").output()?;
     let output = String::from_utf8_lossy(&tty_output.stdout);
@@ -58,7 +58,7 @@ fn get_terminal() -> Result<String, Box<dyn Error>> {
 }
 
 
-/// Display ASCII Art of the tool's name
+/// Display ASCII Art
 fn display_ascii_logo() {
     let logo = r#"
     ________     ___    ___ ___  ________  ___  ________  _______      
@@ -76,7 +76,7 @@ fn display_ascii_logo() {
 
 /// Main function to display system information
 fn main() -> Result<(), Box<dyn Error>> {
-    // Display ASCII logo for Oxidize
+    // Display ASCII
     display_ascii_logo();
 
     // OS Type and Kernel Version
