@@ -1,48 +1,84 @@
+// OxiFetch
+// By: AK1R4S4T0H
+
 use sys_info::{os_type, os_release, cpu_num, cpu_speed, mem_info, hostname};
+use std::fs;
 use std::error::Error;
-use std::process::exit;
 use std::env;
 use users::{get_user_by_uid, get_current_uid};
 use users::os::unix::UserExt;
-use advanced::*;
 
-/// Display ASCII Art
+/// System uptime in hours and minutes
+fn get_uptime() -> Result<String, Box<dyn Error>> {
+    let uptime_content = fs::read_to_string("/proc/uptime")?;
+    let uptime_seconds = uptime_content
+        .split_whitespace()
+        .next()
+        .unwrap_or("0")
+        .parse::<f64>()
+        .unwrap_or(0.0);
+    let hours = (uptime_seconds / 3600.0).floor();
+    let minutes = ((uptime_seconds % 3600.0) / 60.0).floor();
+    Ok(format!("{:.0} hours, {:.0} minutes", hours, minutes))
+}
+
+/// Distribution name from /etc/os-release
+fn get_distro() -> Result<String, Box<dyn Error>> {
+    let os_release_content = fs::read_to_string("/etc/os-release")?;
+    for line in os_release_content.lines() {
+        if line.starts_with("PRETTY_NAME") {
+            return Ok(line
+                .split('=')
+                .nth(1)
+                .unwrap_or("Unknown")
+                .replace("\"", ""));
+        }
+    }
+    Ok("Unknown".to_string())
+}
+
+/// Current shell
+fn get_shell() -> String {
+    if let Some(user) = get_user_by_uid(get_current_uid()) {
+        user.shell().to_string_lossy().into_owned()
+    } else {
+        "Unknown".to_string()
+    }
+}
+
 fn display_ascii_logo() {
     let logo = r#"
-    ██████╗ ██╗  ██╗██╗██████╗ ██╗███████╗███████╗
-    ██╔═══██╗╚██╗██╔╝██║██╔══██╗██║╚══███╔╝██╔════╝
-    ██║   ██║ ╚███╔╝ ██║██║  ██║██║  ███╔╝ █████╗  
-    ██║   ██║ ██╔██╗ ██║██║  ██║██║ ███╔╝  ██╔══╝  
-    ╚██████╔╝██╔╝ ██╗██║██████╔╝██║███████╗███████╗
-     ╚═════╝ ╚═╝  ╚═╝╚═╝╚═════╝ ╚═╝╚══════╝╚══════╝ 
-    "#;
+
+
+
+    ██████╗ ██╗  ██╗██╗███████╗███████╗████████╗ ██████╗██╗  ██╗
+    ██╔═══██╗╚██╗██╔╝██║██╔════╝██╔════╝╚══██╔══╝██╔════╝██║  ██║
+    ██║   ██║ ╚███╔╝ ██║█████╗  █████╗     ██║   ██║     ███████║
+    ██║   ██║ ██╔██╗ ██║██╔══╝  ██╔══╝     ██║   ██║     ██╔══██║
+    ╚██████╔╝██╔╝ ██╗██║██║     ███████╗   ██║   ╚██████╗██║  ██║
+     ╚═════╝ ╚═╝  ╚═╝╚═╝╚═╝     ╚══════╝   ╚═╝    ╚═════╝╚═╝  ╚═╝
+                                                                 
+    
+                       
+    
+     "#;
 
     println!("{}", logo);
 }
 
 fn print_help() {
     println!("Created By: AK1R4S4T0H");
-    println!("Usage: system_info [OPTION]");
-    println!("If ran with No Options, then All Options will be used");
+    println!("Usage: oxifetch [OPTION]");
+    println!("If run with No Options, then All Options will be used");
     println!("Options:");
-    println!("  -o, --os-type         Print the OS type.");
-    println!("  -r, --os-release      Print the OS release.");
+    println!("  -t, --os-type         Print the OS type.");
+    println!("  -k, --os-release      Print the OS release.");
     println!("  -c, --cpu-num         Print the number of CPU cores.");
     println!("  -s, --cpu-speed       Print the CPU speed in MHz.");
     println!("  -m, --mem-info        Print memory information.");
-    println!("  -h, --hostname        Print the hostname.");
+    println!("  -hn, --hostname       Print the hostname.");
     println!("  -u, --uptime          Print system uptime.");
     println!("  -l, --shell           Print the current shell.");
-    println!("  -d, --disk-info       Print disk usage information.");
-    println!("  -n, --network-info    Print network information.");
-    println!("  -g, --gpu-info        Print GPU information.");
-    println!("  -b, --battery-info    Print battery status.");
-    println!("  -a, --load-average    Print load average.");
-    println!("  -p, --processes-info  Print running processes information.");
-    println!("  -t, --temp-info       Print temperature sensors information.");
-    println!("  -x, --detailed-mem    Print detailed memory information.");
-    println!("  -u, --users-info      Print logged-in users information.");
-    println!("  -s, --services-info   Print services/daemons information.");
     println!("  -h, --help            Show this help message.");
 }
 
@@ -100,26 +136,12 @@ fn display_all_info() -> Result<(), Box<dyn Error>> {
     // Shell
     println!("Shell: {}", get_shell());
 
-    // Advanced Features
-    get_advanced_info()?;
-    get_disk_info()?;
-    get_network_info();
-    get_gpu_info();
-    get_battery_info()?;
-    get_load_average()?;
-    get_processes_info();
-    get_temperature_info()?;
-    get_detailed_memory_info()?;
-    get_users_info();
-    get_services_info();
-
     Ok(())
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
     let args: Vec<String> = env::args().collect();
 
-    // Display ASCII
     display_ascii_logo();
 
     if args.len() < 2 {
@@ -137,14 +159,14 @@ fn main() -> Result<(), Box<dyn Error>> {
         print_help();
     } else {
         // Process each flag
-        if flags.contains("--os-type") || flags.contains("-o") {
+        if flags.contains("--os-type") || flags.contains("-t") {
             match os_type() {
                 Ok(os) => println!("OS: {}", os),
                 Err(e) => eprintln!("Failed to get OS type: {}", e),
             }
         }
 
-        if flags.contains("--os-release") || flags.contains("-r") {
+        if flags.contains("--os-release") || flags.contains("-k") {
             match os_release() {
                 Ok(release) => println!("Kernel: {}", release),
                 Err(e) => eprintln!("Failed to get Kernel version: {}", e),
@@ -176,7 +198,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             }
         }
 
-        if flags.contains("--hostname") || flags.contains("-h") {
+        if flags.contains("--hostname") || flags.contains("-hn") {
             match hostname() {
                 Ok(name) => println!("Hostname: {}", name),
                 Err(e) => eprintln!("Failed to get Hostname: {}", e),
@@ -194,47 +216,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             println!("Shell: {}", get_shell());
         }
 
-        if flags.contains("--disk-info") || flags.contains("-d") {
-            get_disk_info()?;
-        }
-
-        if flags.contains("--network-info") || flags.contains("-n") {
-            get_network_info();
-        }
-
-        if flags.contains("--gpu-info") || flags.contains("-g") {
-            get_gpu_info();
-        }
-
-        if flags.contains("--battery-info") || flags.contains("-b") {
-            get_battery_info()?;
-        }
-
-        if flags.contains("--load-average") || flags.contains("-a") {
-            get_load_average()?;
-        }
-
-        if flags.contains("--processes-info") || flags.contains("-p") {
-            get_processes_info();
-        }
-
-        if flags.contains("--temp-info") || flags.contains("-t") {
-            get_temperature_info()?;
-        }
-
-        if flags.contains("--detailed-mem") || flags.contains("-x") {
-            get_detailed_memory_info()?;
-        }
-
-        if flags.contains("--users-info") || flags.contains("-u") {
-            get_users_info();
-        }
-
-        if flags.contains("--services-info") || flags.contains("-s") {
-            get_services_info();
-        }
-
-        // If no valid flags were provided
+        // no valid flags
         if flags.is_empty() {
             return display_all_info();
         }
@@ -242,3 +224,5 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     Ok(())
 }
+
+
