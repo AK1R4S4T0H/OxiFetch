@@ -1,3 +1,5 @@
+// oxidize
+// By: AK1R4S4T0H
 use sys_info::{os_type, os_release, cpu_num, cpu_speed, mem_info, hostname};
 use std::fs;
 use std::error::Error;
@@ -216,3 +218,58 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     Ok(())
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//GNU License
+//AK1R4S4T0H
