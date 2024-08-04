@@ -1,7 +1,5 @@
-# oxet
----
 ## Overview
-OxiFetch
+OxiFetch is a 
 Rust program that displays key system information, such as operating system details, uptime, CPU specs, memory usage, and more. The output includes an ASCII art logo and provides a quick overview of your machine's current status.
 ---
 ## Features
