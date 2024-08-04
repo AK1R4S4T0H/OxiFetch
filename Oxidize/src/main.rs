@@ -45,7 +45,7 @@ fn get_shell() -> String {
     }
 }
 
-/// Display ASCII Art
+
 fn display_ascii_logo() {
     let logo = r#"
     ██████╗ ██╗  ██╗██╗██████╗ ██╗███████╗███████╗
@@ -135,7 +135,6 @@ fn display_all_info() -> Result<(), Box<dyn Error>> {
 fn main() -> Result<(), Box<dyn Error>> {
     let args: Vec<String> = env::args().collect();
 
-    // Display ASCII
     display_ascii_logo();
 
     if args.len() < 2 {
@@ -210,7 +209,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             println!("Shell: {}", get_shell());
         }
 
-        // If no valid flags were provided
+        // no valid flags
         if flags.is_empty() {
             return display_all_info();
         }
