@@ -23,7 +23,7 @@ Rust program that displays key system information, such as operating system deta
 
     ```bash
     git clone https://github.com/AK1R4S4T0H/oxidize
-    cd oxidize/Oxidize
+    cd oxifetch/OxiFetch
     ```
 
 2. **Build the program**:
