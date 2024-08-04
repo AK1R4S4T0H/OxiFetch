@@ -7,7 +7,6 @@ edition = "2021"
 sys-info = "0.9"
 regex = "1.5"
 users = "0.11"
-
 [[bin]]
 name = "oxifetch"
 path = "src/main.rs" 

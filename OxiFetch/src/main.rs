@@ -149,7 +149,7 @@ fn display_all_info() -> Result<(), Box<dyn Error>> {
                 (mem.total as f64) / 1024.0 / 1024.0
             ));
 
-            // Draw a memory usage chart
+            // memory usage chart
             // draw_horizontal_bar("Memory", mem.avail as u64, mem.total as u64);
         }
         Err(e) => eprintln!("Failed to get Memory info: {}", e),
