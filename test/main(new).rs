@@ -1,5 +1,3 @@
-mod advanced;
-
 use sys_info::{os_type, os_release, cpu_num, cpu_speed, mem_info, hostname};
 use std::error::Error;
 use std::process::exit;
