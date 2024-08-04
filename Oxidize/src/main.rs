@@ -271,5 +271,5 @@ fn main() -> Result<(), Box<dyn Error>> {
 
 
 
-//GNU License
+//GPL 3.0 License
 //AK1R4S4T0H
