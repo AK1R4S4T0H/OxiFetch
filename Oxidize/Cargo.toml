@@ -1,12 +1,18 @@
 [package]
 name = "OXIDIZE"
-version = "0.1.0"
+version = "0.0.1"
 edition = "2021"
 
 [dependencies]
 sys-info = "0.9"
 regex = "1.5"
 users = "0.11"
-image = "0.23"  # Optional for handling OS logos
+image = "0.23"  
 termimage = "0.1"
-crossterm = "0.24"  # Optional for terminal graphics
+crossterm = "0.24" 
+clap = { version = "4.3", features = ["derive"] }
+
+
+[[bin]]
+name = "oxidize"
+path = "src/main.rs" 
