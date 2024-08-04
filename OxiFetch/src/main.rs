@@ -46,95 +46,125 @@ fn get_shell() -> String {
     }
 }
 
+/// Draw a horizontal line for a chart
+// fn draw_horizontal_bar(label: &str, value: u64, max: u64) {
+//    let bar_length = 20; // Length of the bar
+//    let filled_length = (value as f64 / max as f64 * bar_length as f64) as usize;
+//    let empty_length = bar_length - filled_length;
+//
+//    let filled_bar = "=".repeat(filled_length);
+//    let empty_bar = " ".repeat(empty_length);
+//
+//    println!("{:<12} [{}{}] {:>3}%", label, filled_bar, empty_bar, (value * 100 / max));
+//}
+
+/// Draw a box with content
+fn draw_box(content: &str) {
+    let width = content.lines().map(|line| line.len()).max().unwrap_or(0);
+    let border = "+".to_string() + &"-".repeat(width + 2) + "+";
+
+    println!("{}", border);
+    for line in content.lines() {
+        println!("| {}{} |", line, " ".repeat(width - line.len()));
+    }
+    println!("{}", border);
+}
+
 fn display_ascii_logo() {
     let logo = r#"
-
-
-
     ██████╗ ██╗  ██╗██╗███████╗███████╗████████╗ ██████╗██╗  ██╗
     ██╔═══██╗╚██╗██╔╝██║██╔════╝██╔════╝╚══██╔══╝██╔════╝██║  ██║
     ██║   ██║ ╚███╔╝ ██║█████╗  █████╗     ██║   ██║     ███████║
     ██║   ██║ ██╔██╗ ██║██╔══╝  ██╔══╝     ██║   ██║     ██╔══██║
     ╚██████╔╝██╔╝ ██╗██║██║     ███████╗   ██║   ╚██████╗██║  ██║
      ╚═════╝ ╚═╝  ╚═╝╚═╝╚═╝     ╚══════╝   ╚═╝    ╚═════╝╚═╝  ╚═╝
-                                                                 
-    
-                       
-    
-     "#;
+    "#;
 
     println!("{}", logo);
 }
 
 fn print_help() {
-    println!("Created By: AK1R4S4T0H");
-    println!("Usage: oxifetch [OPTION]");
-    println!("If run with No Options, then All Options will be used");
-    println!("Options:");
-    println!("  -t, --os-type         Print the OS type.");
-    println!("  -k, --os-release      Print the OS release.");
-    println!("  -c, --cpu-num         Print the number of CPU cores.");
-    println!("  -s, --cpu-speed       Print the CPU speed in MHz.");
-    println!("  -m, --mem-info        Print memory information.");
-    println!("  -hn, --hostname       Print the hostname.");
-    println!("  -u, --uptime          Print system uptime.");
-    println!("  -l, --shell           Print the current shell.");
-    println!("  -h, --help            Show this help message.");
+    let help_message = r#"
+    Created By: AK1R4S4T0H
+    Usage: oxifetch [OPTION]
+    If run with No Options, then All Options will be used
+    Options:
+      -t, --os-type         Print the OS type.
+      -k, --os-release      Print the OS release.
+      -c, --cpu-num         Print the number of CPU cores.
+      -s, --cpu-speed       Print the CPU speed in MHz.
+      -m, --mem-info        Print memory information.
+      -hn, --hostname       Print the hostname.
+      -u, --uptime          Print system uptime.
+      -l, --shell           Print the current shell.
+      -h, --help            Show this help message.
+    "#;
+
+    draw_box(help_message);
 }
 
 fn display_all_info() -> Result<(), Box<dyn Error>> {
+    let mut content = String::new();
+
     // OS Type and Kernel Version
     match os_type() {
-        Ok(os) => println!("OS: {}", os),
+        Ok(os) => content.push_str(&format!("OS: {}\n", os)),
         Err(e) => eprintln!("Failed to get OS type: {}", e),
     }
 
     match os_release() {
-        Ok(release) => println!("Kernel: {}", release),
+        Ok(release) => content.push_str(&format!("Kernel: {}\n", release)),
         Err(e) => eprintln!("Failed to get Kernel version: {}", e),
     }
 
     // Distro
     match get_distro() {
-        Ok(distro) => println!("Distro: {}", distro),
+        Ok(distro) => content.push_str(&format!("Distro: {}\n", distro)),
         Err(e) => eprintln!("Failed to get distribution: {}", e),
     }
 
     // Uptime
     match get_uptime() {
-        Ok(uptime) => println!("Uptime: {}", uptime),
+        Ok(uptime) => content.push_str(&format!("Uptime: {}\n", uptime)),
         Err(e) => eprintln!("Failed to get uptime: {}", e),
     }
 
     // CPU Information
     match cpu_num() {
-        Ok(cpus) => println!("CPU Cores: {}", cpus),
+        Ok(cpus) => content.push_str(&format!("CPU Cores: {}\n", cpus)),
         Err(e) => eprintln!("Failed to get CPU cores: {}", e),
     }
 
     match cpu_speed() {
-        Ok(speed) => println!("CPU Speed: {} MHz", speed),
+        Ok(speed) => content.push_str(&format!("CPU Speed: {} MHz\n", speed)),
         Err(e) => eprintln!("Failed to get CPU speed: {}", e),
     }
 
     // Memory Information
     match mem_info() {
-        Ok(mem) => println!(
-            "Memory: {:.2} GB / {:.2} GB",
-            (mem.avail as f64) / 1024.0 / 1024.0,
-            (mem.total as f64) / 1024.0 / 1024.0
-        ),
+        Ok(mem) => {
+            content.push_str(&format!(
+                "Memory: {:.2} GB / {:.2} GB\n",
+                (mem.avail as f64) / 1024.0 / 1024.0,
+                (mem.total as f64) / 1024.0 / 1024.0
+            ));
+
+            // Draw a memory usage chart
+            // draw_horizontal_bar("Memory", mem.avail as u64, mem.total as u64);
+        }
         Err(e) => eprintln!("Failed to get Memory info: {}", e),
     }
 
     // Hostname
     match hostname() {
-        Ok(name) => println!("Hostname: {}", name),
+        Ok(name) => content.push_str(&format!("Hostname: {}\n", name)),
         Err(e) => eprintln!("Failed to get Hostname: {}", e),
     }
 
     // Shell
-    println!("Shell: {}", get_shell());
+    content.push_str(&format!("Shell: {}\n", get_shell()));
+
+    draw_box(&content);
 
     Ok(())
 }
@@ -158,62 +188,73 @@ fn main() -> Result<(), Box<dyn Error>> {
     if flags.contains("--help") || flags.contains("-h") {
         print_help();
     } else {
+        let mut content = String::new();
+
         // Process each flag
         if flags.contains("--os-type") || flags.contains("-t") {
             match os_type() {
-                Ok(os) => println!("OS: {}", os),
+                Ok(os) => content.push_str(&format!("OS: {}\n", os)),
                 Err(e) => eprintln!("Failed to get OS type: {}", e),
             }
         }
 
         if flags.contains("--os-release") || flags.contains("-k") {
             match os_release() {
-                Ok(release) => println!("Kernel: {}", release),
+                Ok(release) => content.push_str(&format!("Kernel: {}\n", release)),
                 Err(e) => eprintln!("Failed to get Kernel version: {}", e),
             }
         }
 
         if flags.contains("--cpu-num") || flags.contains("-c") {
             match cpu_num() {
-                Ok(cpus) => println!("CPU Cores: {}", cpus),
+                Ok(cpus) => content.push_str(&format!("CPU Cores: {}\n", cpus)),
                 Err(e) => eprintln!("Failed to get CPU cores: {}", e),
             }
         }
 
         if flags.contains("--cpu-speed") || flags.contains("-s") {
             match cpu_speed() {
-                Ok(speed) => println!("CPU Speed: {} MHz", speed),
+                Ok(speed) => content.push_str(&format!("CPU Speed: {} MHz\n", speed)),
                 Err(e) => eprintln!("Failed to get CPU speed: {}", e),
             }
         }
 
         if flags.contains("--mem-info") || flags.contains("-m") {
             match mem_info() {
-                Ok(mem) => println!(
-                    "Memory: {:.2} GB / {:.2} GB",
-                    (mem.avail as f64) / 1024.0 / 1024.0,
-                    (mem.total as f64) / 1024.0 / 1024.0
-                ),
+                Ok(mem) => {
+                    content.push_str(&format!(
+                        "Memory: {:.2} GB / {:.2} GB\n",
+                        (mem.avail as f64) / 1024.0 / 1024.0,
+                        (mem.total as f64) / 1024.0 / 1024.0
+                    ));
+
+                    // memory usage bar
+                    // draw_horizontal_bar("Memory", mem.avail as u64, mem.total as u64);
+                }
                 Err(e) => eprintln!("Failed to get Memory info: {}", e),
             }
         }
 
         if flags.contains("--hostname") || flags.contains("-hn") {
             match hostname() {
-                Ok(name) => println!("Hostname: {}", name),
+                Ok(name) => content.push_str(&format!("Hostname: {}\n", name)),
                 Err(e) => eprintln!("Failed to get Hostname: {}", e),
             }
         }
 
         if flags.contains("--uptime") || flags.contains("-u") {
             match get_uptime() {
-                Ok(uptime) => println!("Uptime: {}", uptime),
+                Ok(uptime) => content.push_str(&format!("Uptime: {}\n", uptime)),
                 Err(e) => eprintln!("Failed to get uptime: {}", e),
             }
         }
 
         if flags.contains("--shell") || flags.contains("-l") {
-            println!("Shell: {}", get_shell());
+            content.push_str(&format!("Shell: {}\n", get_shell()));
+        }
+
+        if !content.is_empty() {
+            draw_box(&content);
         }
 
         // no valid flags
