@@ -1,7 +1,7 @@
-# oxidize
+# oxet
 ---
 ## Overview
-
+OxiFetch
 Rust program that displays key system information, such as operating system details, uptime, CPU specs, memory usage, and more. The output includes an ASCII art logo and provides a quick overview of your machine's current status.
 ---
 ## Features
@@ -38,19 +38,22 @@ Rust program that displays key system information, such as operating system deta
 3. **Run the program**:
 
     ```bash
-    oxidize
+    oxet
     ```
 ---
 ## Example Output
 
 
 ```plaintext
-    ██████╗ ██╗  ██╗██╗██████╗ ██╗███████╗███████╗
-    ██╔═══██╗╚██╗██╔╝██║██╔══██╗██║╚══███╔╝██╔════╝
-    ██║   ██║ ╚███╔╝ ██║██║  ██║██║  ███╔╝ █████╗  
-    ██║   ██║ ██╔██╗ ██║██║  ██║██║ ███╔╝  ██╔══╝  
-    ╚██████╔╝██╔╝ ██╗██║██████╔╝██║███████╗███████╗
-     ╚═════╝ ╚═╝  ╚═╝╚═╝╚═════╝ ╚═╝╚══════╝╚══════╝ 
+
+
+    ██████╗ ██╗  ██╗███████╗████████╗
+    ██╔═══██╗╚██╗██╔╝██╔════╝╚══██╔══╝
+    ██║   ██║ ╚███╔╝ █████╗     ██║   
+    ██║   ██║ ██╔██╗ ██╔══╝     ██║   
+    ╚██████╔╝██╔╝ ██╗███████╗   ██║   
+     ╚═════╝ ╚═╝  ╚═╝╚══════╝   ╚═╝   
+                                      
     
 OS: Linux
 Kernel: 5.4.0-72-generic

@@ -1,5 +1,6 @@
-// oxidize
+// Oxet
 // By: AK1R4S4T0H
+
 use sys_info::{os_type, os_release, cpu_num, cpu_speed, mem_info, hostname};
 use std::fs;
 use std::error::Error;
@@ -45,31 +46,34 @@ fn get_shell() -> String {
     }
 }
 
-
 fn display_ascii_logo() {
     let logo = r#"
-    ██████╗ ██╗  ██╗██╗██████╗ ██╗███████╗███████╗
-    ██╔═══██╗╚██╗██╔╝██║██╔══██╗██║╚══███╔╝██╔════╝
-    ██║   ██║ ╚███╔╝ ██║██║  ██║██║  ███╔╝ █████╗  
-    ██║   ██║ ██╔██╗ ██║██║  ██║██║ ███╔╝  ██╔══╝  
-    ╚██████╔╝██╔╝ ██╗██║██████╔╝██║███████╗███████╗
-     ╚═════╝ ╚═╝  ╚═╝╚═╝╚═════╝ ╚═╝╚══════╝╚══════╝ 
-    "#;
+
+
+    ██████╗ ██╗  ██╗███████╗████████╗
+    ██╔═══██╗╚██╗██╔╝██╔════╝╚══██╔══╝
+    ██║   ██║ ╚███╔╝ █████╗     ██║   
+    ██║   ██║ ██╔██╗ ██╔══╝     ██║   
+    ╚██████╔╝██╔╝ ██╗███████╗   ██║   
+     ╚═════╝ ╚═╝  ╚═╝╚══════╝   ╚═╝   
+                                      
+    
+     "#;
 
     println!("{}", logo);
 }
 
 fn print_help() {
     println!("Created By: AK1R4S4T0H");
-    println!("Usage: system_info [OPTION]");
-    println!("If ran with No Options, then All Options will be used");
+    println!("Usage: oxet [OPTION]");
+    println!("If run with No Options, then All Options will be used");
     println!("Options:");
     println!("  -t, --os-type         Print the OS type.");
     println!("  -k, --os-release      Print the OS release.");
     println!("  -c, --cpu-num         Print the number of CPU cores.");
     println!("  -s, --cpu-speed       Print the CPU speed in MHz.");
     println!("  -m, --mem-info        Print memory information.");
-    println!("  -hn, --hostname        Print the hostname.");
+    println!("  -hn, --hostname       Print the hostname.");
     println!("  -u, --uptime          Print system uptime.");
     println!("  -l, --shell           Print the current shell.");
     println!("  -h, --help            Show this help message.");
@@ -217,8 +221,6 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     Ok(())
 }
-
-
 
 
 
