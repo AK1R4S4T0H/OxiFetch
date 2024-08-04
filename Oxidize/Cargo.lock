@@ -3,7 +3,7 @@
 version = 3
 
 [[package]]
-name = "OXET"
+name = "OXIFETCH"
 version = "0.0.1"
 dependencies = [
  "regex",

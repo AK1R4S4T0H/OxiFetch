@@ -36,7 +36,7 @@ Rust program that displays key system information, such as operating system deta
 3. **Run the program**:
 
     ```bash
-    oxet
+    oxifetch
     ```
 ---
 ## Example Output

@@ -5,7 +5,7 @@ if ! command -v cargo &> /dev/null; then
     exit 1
 fi
 set -e
-BINARY_NAME="oxet"
+BINARY_NAME="oxifetch"
 TARGET_DIR="/usr/local/bin"
 echo "Building the Rust project..."
 cargo build --release
