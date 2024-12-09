@@ -98,6 +98,7 @@ fn print_help() {
       -u, --uptime          Print system uptime.
       -l, --shell           Print the current shell.
       -h, --help            Show this help message.
+      --check               Show Version Info
     "#;
 
     draw_box(help_message);
@@ -170,6 +171,7 @@ fn display_all_info() -> Result<(), Box<dyn Error>> {
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
+
     let args: Vec<String> = env::args().collect();
 
     display_ascii_logo();
@@ -187,6 +189,10 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     if flags.contains("--help") || flags.contains("-h") {
         print_help();
+    } else if flags.contains("--check") {
+        // Print version information
+        const VERSION: &str = "0.0.2";
+        println!("OxiFetch Version: {}", VERSION);
     } else {
         let mut content = String::new();
 
