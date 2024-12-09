@@ -4,13 +4,24 @@ if ! command -v cargo &> /dev/null; then
     echo "Cargo (Rust) not found. Please install Rust before running this script."
     exit 1
 fi
+
 set -e
-BINARY_NAME="oxifetch"
+
+BINARY_NAME=$(grep -m 1 '^name = ' Cargo.toml | sed -E 's/^name = "(.*)"/\1/')
+
+if [ -z "$BINARY_NAME" ]; then
+    echo "Error: Binary name not found in Cargo.toml (under [package] section)."
+    exit 1
+fi
+
 TARGET_DIR="/usr/local/bin"
+
 echo "Building the Rust project..."
 cargo build --release
+
 echo "Installing the binary to $TARGET_DIR/$BINARY_NAME..."
 sudo mv target/release/$BINARY_NAME $TARGET_DIR/
+
 echo "Verifying installation..."
 if command -v $BINARY_NAME &> /dev/null; then
     echo "$BINARY_NAME successfully installed."
@@ -19,3 +30,4 @@ else
     echo "Installation failed. $BINARY_NAME not found in $TARGET_DIR."
     exit 1
 fi
+

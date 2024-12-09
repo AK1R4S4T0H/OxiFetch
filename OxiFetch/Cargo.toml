@@ -1,12 +1,13 @@
 [package]
-name = "OXIFETCH"
-version = "0.0.1"
+name = "oxifetch"
+version = "0.0.2"
 edition = "2021"
 
 [dependencies]
 sys-info = "0.9"
 regex = "1.5"
 users = "0.11"
+
 [[bin]]
 name = "oxifetch"
-path = "src/main.rs" 
+path = "src/main.rs"
