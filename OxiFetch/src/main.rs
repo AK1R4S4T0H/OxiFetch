@@ -7,6 +7,7 @@ use std::error::Error;
 use std::env;
 use users::{get_user_by_uid, get_current_uid};
 use users::os::unix::UserExt;
+use std::process::Command;
 
 /// System uptime in hours and minutes
 fn get_uptime() -> Result<String, Box<dyn Error>> {
@@ -20,6 +21,35 @@ fn get_uptime() -> Result<String, Box<dyn Error>> {
     let hours = (uptime_seconds / 3600.0).floor();
     let minutes = ((uptime_seconds % 3600.0) / 60.0).floor();
     Ok(format!("{:.0} hours, {:.0} minutes", hours, minutes))
+}
+
+/// Get desktop manager type
+fn get_desktop_manager() -> String {
+    if let Ok(wm) = env::var("XDG_SESSION_DESKTOP") {
+        return wm;
+    }
+    "Unknown".to_string()
+}
+
+/// Get desktop environment
+fn get_desktop_environment() -> String {
+    if let Ok(session) = env::var("XDG_CURRENT_DESKTOP") {
+        return session;
+    }
+    if let Ok(session) = env::var("DESKTOP_SESSION") {
+        return session;
+    }
+    "Unknown".to_string()
+}
+
+fn get_cpu_type() -> Result<String, Box<dyn Error>> {
+    let cpu_info = fs::read_to_string("/proc/cpuinfo")?;
+    for line in cpu_info.lines() {
+        if line.starts_with("model name") {
+            return Ok(line.split(':').nth(1).unwrap_or("Unknown").trim().to_string());
+        }
+    }
+    Ok("Unknown".to_string())
 }
 
 /// Distribution name from /etc/os-release
@@ -44,6 +74,35 @@ fn get_shell() -> String {
     } else {
         "Unknown".to_string()
     }
+}
+
+/// Get Terminal Name
+fn get_terminal_name() -> String {
+    match env::var("TERM") {
+        Ok(term) => term,
+        Err(_) => "Unknown".to_string(),
+    }
+}
+
+/// Get GPU Information
+fn get_gpu_info() -> Result<String, String> {
+    let output = Command::new("lspci")
+        .arg("-nn")
+        .arg("-v")
+        .output()
+        .map_err(|e| format!("Failed to execute lspci: {}", e))?;
+
+    let output_str = String::from_utf8_lossy(&output.stdout);
+
+    for line in output_str.lines() {
+        if line.contains("VGA compatible controller") {
+            if let Some(gpu_info) = line.split(':').nth(2) {
+                return Ok(gpu_info.trim().to_string());
+            }
+        }
+    }
+
+    Err("GPU information not found".to_string())
 }
 
 /// Draw a horizontal line for a chart
@@ -97,6 +156,9 @@ fn print_help() {
       -hn, --hostname       Print the hostname.
       -u, --uptime          Print system uptime.
       -l, --shell           Print the current shell.
+      -g, --gpu             Print GPU information.
+      -term, --terminal     Print the terminal name.
+      -d, --desktop         Print the desktop environment.
       -h, --help            Show this help message.
       --check               Show Version Info
     "#;
@@ -124,6 +186,19 @@ fn display_all_info() -> Result<(), Box<dyn Error>> {
         Err(e) => eprintln!("Failed to get distribution: {}", e),
     }
 
+    // Desktop Environment
+    content.push_str(&format!(
+        "Desktop Environment: {}\n",
+        get_desktop_environment()
+    ));
+
+    // Desktop Manager
+    content.push_str(&format!(
+        "Desktop Manager: {}\n",
+        get_desktop_manager()
+    ));
+
+
     // Uptime
     match get_uptime() {
         Ok(uptime) => content.push_str(&format!("Uptime: {}\n", uptime)),
@@ -139,6 +214,17 @@ fn display_all_info() -> Result<(), Box<dyn Error>> {
     match cpu_speed() {
         Ok(speed) => content.push_str(&format!("CPU Speed: {} MHz\n", speed)),
         Err(e) => eprintln!("Failed to get CPU speed: {}", e),
+    }
+
+    // CPU Type
+    match get_cpu_type() {
+        Ok(cpu) => content.push_str(&format!("CPU Type: {}\n", cpu)),
+        Err(e) => eprintln!("Failed to get CPU type: {}", e),
+    }
+
+    match get_gpu_info() {
+        Ok(gpu) => content.push_str(&format!("GPU: {}\n", gpu)),
+        Err(e) => eprintln!("Failed to get GPU info: {}", e),
     }
 
     // Memory Information
@@ -162,12 +248,21 @@ fn display_all_info() -> Result<(), Box<dyn Error>> {
         Err(e) => eprintln!("Failed to get Hostname: {}", e),
     }
 
+    match get_terminal_name() {
+        term if !term.is_empty() => content.push_str(&format!("Terminal: {}\n", term)),
+        _ => content.push_str("Terminal: Unknown\n"),
+    }
+
     // Shell
     content.push_str(&format!("Shell: {}\n", get_shell()));
 
     draw_box(&content);
+    
 
     Ok(())
+
+    
+
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
@@ -225,6 +320,13 @@ fn main() -> Result<(), Box<dyn Error>> {
             }
         }
 
+        if flags.contains("--gpu") || flags.contains("-g") {
+            match get_gpu_info() {
+                Ok(gpu) => content.push_str(&format!("GPU: {}\n", gpu)),
+                Err(e) => eprintln!("Failed to get GPU info: {}", e),
+            }
+        }
+
         if flags.contains("--mem-info") || flags.contains("-m") {
             match mem_info() {
                 Ok(mem) => {
@@ -258,6 +360,16 @@ fn main() -> Result<(), Box<dyn Error>> {
         if flags.contains("--shell") || flags.contains("-l") {
             content.push_str(&format!("Shell: {}\n", get_shell()));
         }
+
+        if flags.contains("--terminal") || flags.contains("-term") {
+            content.push_str(&format!("Terminal: {}\n", get_terminal_name()));
+        }
+
+        if flags.contains("--desktop") || flags.contains("-d") {
+            content.push_str(&format!("Desktop Environment: {}\n", get_desktop_environment()));
+        }
+
+                
 
         if !content.is_empty() {
             draw_box(&content);

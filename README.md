@@ -7,12 +7,15 @@ Rust program that displays key system information, such as operating system deta
 - **Operating System and Kernel**: Displays OS type and kernel version.
 - **Distribution Name**: Identifies the Linux distribution from `/etc/os-release`.
 - **Uptime**: Shows system uptime in hours and minutes.
-- **CPU Information**: Lists the number of CPU cores and their speed in MHz.
+- **CPU Information**: Lists the number of CPU cores, their speed in MHz, and CPU type.
 - **Memory Usage**: Reports available and total memory in GB.
 - **Hostname**: Displays the system's hostname.
 - **Shell and Terminal Emulator**: Identifies the user's current shell and terminal emulator.
+- **GPU Information**: Displays the GPU type and vendor information.
+- **Desktop Manager**: Reports the desktop manager in use (e.g., GDM, LightDM).
+- **Desktop Environment**: Identifies the desktop environment (e.g., GNOME, KDE Plasma).
 - **ASCII Art Logo**: Presents an ASCII logo at the start of the output.
----
+
 ## Requirements
 
 - **Rust**: Make sure Rust is installed. Get it from [rust-lang.org](https://www.rust-lang.org/).
@@ -59,9 +62,13 @@ Rust program that displays key system information, such as operating system deta
 OS: Linux
 Kernel: 5.4.0-72-generic
 Distro: Ubuntu 20.04.2 LTS
+Desktop Environment: KDE                                  |
+Desktop Manager: plasma 
 Uptime: 1 hour, 25 minutes
 CPU Cores: 4
 CPU Speed: 2600 MHz
+CPU Type: AMD FX(tm)-6100 Six-Core Processor              |
+GPU: NVIDIA Corporation GP107 [GeForce GTX 1050 Ti]
 Memory: 3.45 GB / 8.00 GB
 Hostname: my-machine
 Shell: /bin/bash
