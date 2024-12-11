@@ -68,3 +68,5 @@ Shell: /bin/bash
 Terminal: gnome-terminal
 ```
 ---
+![OxiFetch Image](https://github.com/AK1R4S4T0H/OxiFetch/blob/main/pics/oxif.png?raw=true)
+---
