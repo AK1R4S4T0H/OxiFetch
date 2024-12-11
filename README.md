@@ -42,6 +42,29 @@ Rust program that displays key system information, such as operating system deta
     oxifetch
     ```
 ---
+## Settings
+
+```plaintext
+
+    Created By: AK1R4S4T0H
+    Usage: oxifetch [OPTION]
+    If run with No Options, then All Options will be used
+    Options:
+      -t, --os-type         Print the OS type.
+      -k, --os-release      Print the OS release.
+      -c, --cpu-num         Print the number of CPU cores.
+      -s, --cpu-speed       Print the CPU speed in MHz.
+      -m, --mem-info        Print memory information.
+      -hn, --hostname       Print the hostname.
+      -u, --uptime          Print system uptime.
+      -l, --shell           Print the current shell.
+      -g, --gpu             Print GPU information.
+      -term, --terminal     Print the terminal name.
+      -d, --desktop         Print the desktop environment.
+      -h, --help            Show this help message.
+      --check               Show Version Info
+```
+---
 ## Example Output
 
 
