@@ -1,6 +1,6 @@
 [package]
 name = "oxifetch"
-version = "0.0.3"
+version = "0.0.5"
 authors = ["AK1R4S4T0H <ak1r4s4t0h@proton.me>"]
 edition = "2021"
 description = "OxiFetch is a Rust program that displays key system information, such as OS details, uptime, CPU specs, memory usage, and more. The output includes an ASCII art logo and a quick overview of your machine's current status."
