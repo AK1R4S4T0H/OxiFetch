@@ -91,7 +91,7 @@ Uptime: 1 hour, 25 minutes
 CPU Cores: 4
 CPU Speed: 2600 MHz
 CPU Type: AMD FX(tm)-6100 Six-Core Processor              |
-GPU: NVIDIA Corporation GP107 [GeForce GTX 1050 Ti]
+GPU: NVIDIA Corporation [GeForce GTX 1050 Ti]
 Memory: 3.45 GB / 8.00 GB
 Hostname: my-machine
 Shell: /bin/bash

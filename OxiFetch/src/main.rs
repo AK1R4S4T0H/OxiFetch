@@ -1,13 +1,13 @@
 // OxiFetch
 // By: AK1R4S4T0H
 
-use sys_info::{os_type, os_release, cpu_num, cpu_speed, mem_info, hostname};
-use std::fs;
-use std::error::Error;
 use std::env;
-use users::{get_user_by_uid, get_current_uid};
-use users::os::unix::UserExt;
+use std::error::Error;
+use std::fs;
 use std::process::Command;
+use sys_info::{cpu_num, cpu_speed, hostname, mem_info, os_release, os_type};
+use users::os::unix::UserExt;
+use users::{get_current_uid, get_user_by_uid};
 
 /// System uptime in hours and minutes
 fn get_uptime() -> Result<String, Box<dyn Error>> {
@@ -46,7 +46,12 @@ fn get_cpu_type() -> Result<String, Box<dyn Error>> {
     let cpu_info = fs::read_to_string("/proc/cpuinfo")?;
     for line in cpu_info.lines() {
         if line.starts_with("model name") {
-            return Ok(line.split(':').nth(1).unwrap_or("Unknown").trim().to_string());
+            return Ok(line
+                .split(':')
+                .nth(1)
+                .unwrap_or("Unknown")
+                .trim()
+                .to_string());
         }
     }
     Ok("Unknown".to_string())
@@ -193,11 +198,7 @@ fn display_all_info() -> Result<(), Box<dyn Error>> {
     ));
 
     // Desktop Manager
-    content.push_str(&format!(
-        "Desktop Manager: {}\n",
-        get_desktop_manager()
-    ));
-
+    content.push_str(&format!("Desktop Manager: {}\n", get_desktop_manager()));
 
     // Uptime
     match get_uptime() {
@@ -257,16 +258,11 @@ fn display_all_info() -> Result<(), Box<dyn Error>> {
     content.push_str(&format!("Shell: {}\n", get_shell()));
 
     draw_box(&content);
-    
 
     Ok(())
-
-    
-
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
-
     let args: Vec<String> = env::args().collect();
 
     display_ascii_logo();
@@ -366,10 +362,11 @@ fn main() -> Result<(), Box<dyn Error>> {
         }
 
         if flags.contains("--desktop") || flags.contains("-d") {
-            content.push_str(&format!("Desktop Environment: {}\n", get_desktop_environment()));
+            content.push_str(&format!(
+                "Desktop Environment: {}\n",
+                get_desktop_environment()
+            ));
         }
-
-                
 
         if !content.is_empty() {
             draw_box(&content);
@@ -383,56 +380,6 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     Ok(())
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 //GPL 3.0 License
 //AK1R4S4T0H
