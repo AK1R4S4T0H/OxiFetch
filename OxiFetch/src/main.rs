@@ -282,7 +282,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         print_help();
     } else if flags.contains("--check") {
         // Print version information
-        const VERSION: &str = "0.0.6";
+        const VERSION: &str = "0.0.7";
         println!("OxiFetch Version: {}", VERSION);
     } else {
         let mut content = String::new();
