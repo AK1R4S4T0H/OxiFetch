@@ -46,23 +46,39 @@ Rust program that displays key system information, such as operating system deta
 
 ```plaintext
 
-    Created By: AK1R4S4T0H
-    Usage: oxifetch [OPTION]
-    If run with No Options, then All Options will be used
-    Options:
-      -t, --os-type         Print the OS type.
-      -k, --os-release      Print the OS release.
-      -c, --cpu-num         Print the number of CPU cores.
-      -s, --cpu-speed       Print the CPU speed in MHz.
-      -m, --mem-info        Print memory information.
-      -hn, --hostname       Print the hostname.
-      -u, --uptime          Print system uptime.
-      -l, --shell           Print the current shell.
-      -g, --gpu             Print GPU information.
-      -term, --terminal     Print the terminal name.
-      -d, --desktop         Print the desktop environment.
-      -h, --help            Show this help message.
-      --check               Show Version Info
+╭───────────────────────────────────────────────────────────────────╮
+│ Created By: AK1R4S4T0H                                            │
+│ Usage: oxifetch [OPTIONS]                                         │
+│                                                                   │
+│ If run with no options, displays all system information.          │
+│                                                                   │
+│ Options:                                                          │
+│ -t,  --os-type         Print the OS type                          │
+│ -k,  --os-release      Print the OS release/kernel version        │
+│ -c,  --cpu-num         Print the number of CPU cores              │
+│ -s,  --cpu-speed       Print the CPU speed in MHz                 │
+│ -m,  --mem-info        Print memory information with bar chart    │
+│ -hn, --hostname        Print the hostname                         │
+│ -u,  --uptime          Print system uptime                        │
+│ -l,  --shell           Print the current shell                    │
+│ -g,  --gpu             Print GPU information                      │
+│ -term, --terminal      Print the terminal name                    │
+│ -d,  --desktop         Print the desktop environment              │
+│ -p,  --packages        Print package count                        │
+│ -disk, --disk-usage    Print disk usage for root partition        │
+│ -a,  --ascii <PATH>    Display custom ASCII art from file         │
+│ -color, --theme <n>    Set color theme                            │
+│ (cyan, turquoise, pink, purple, dark-pink)                        │
+│ -h,  --help            Show this help message                     │
+│ --check                Show version information                   │
+│                                                                   │
+│ Examples:                                                         │
+│ oxifetch                           # Show all info (default cyan) │
+│ oxifetch -c -m -g                  # Show CPU, memory, and GPU    │
+│ oxifetch -a logo.txt               # Use custom ASCII art         │
+│ oxifetch --theme purple            # Use purple theme             │
+│ oxifetch --theme pink -a logo.txt  # Custom art with pink theme   │
+╰───────────────────────────────────────────────────────────────────╯
 ```
 ---
 ## Example Output
