@@ -73,29 +73,34 @@ Rust program that displays key system information, such as operating system deta
 
 
 
-    ██████╗ ██╗  ██╗██╗███████╗███████╗████████╗ ██████╗██╗  ██╗
-    ██╔═══██╗╚██╗██╔╝██║██╔════╝██╔════╝╚══██╔══╝██╔════╝██║  ██║
-    ██║   ██║ ╚███╔╝ ██║█████╗  █████╗     ██║   ██║     ███████║
-    ██║   ██║ ██╔██╗ ██║██╔══╝  ██╔══╝     ██║   ██║     ██╔══██║
-    ╚██████╔╝██╔╝ ██╗██║██║     ███████╗   ██║   ╚██████╗██║  ██║
-     ╚═════╝ ╚═╝  ╚═╝╚═╝╚═╝     ╚══════╝   ╚═╝    ╚═════╝╚═╝  ╚═╝
-                                                                 
-                                      
-    
-OS: Linux
-Kernel: 5.4.0-72-generic
-Distro: Ubuntu 20.04.2 LTS
-Desktop Environment: KDE                                  |
-Desktop Manager: plasma 
-Uptime: 1 hour, 25 minutes
-CPU Cores: 4
-CPU Speed: 2600 MHz
-CPU Type: AMD FX(tm)-6100 Six-Core Processor              |
-GPU: NVIDIA Corporation GP107 [GeForce GTX 1050 Ti]
-Memory: 3.45 GB / 8.00 GB
-Hostname: my-machine
-Shell: /bin/bash
-Terminal: gnome-terminal
+███████╗ ██╗  ██╗██╗███████╗███████╗████████╗███████╗██╗  ██╗
+██╔═══██╗╚██╗██╔╝██║██╔════╝██╔════╝╚══██╔══╝██╔════╝██║  ██║
+██║   ██║ ╚███╔╝ ██║█████╗  █████╗     ██║   ██║     ███████║
+██║   ██║ ██╔██╗ ██║██╔══╝  ██╔══╝     ██║   ██║     ██╔══██║
+╚██████╔╝██╔╝ ██╗██║██║     ███████╗   ██║   ███████╗██║  ██║
+╚═════╝ ╚═╝  ╚═╝╚═╝╚═╝     ╚══════╝   ╚═╝   ╚══════╝╚═╝  ╚═╝
+
+╭──────────────────────────────────────────────────────╮
+│ OS: Linux                                            │
+│ Kernel: 6.17.9-zen1-1-zen                            │
+│ Distro: Garuda Linux                                 │
+│ Desktop: KDE                                         │
+│ Host: Cyance                                         │
+│ Uptime: 2d 15h 5m                                    │
+│ Packages: 2064 (pacman)                              │
+│ Shell: bash                                          │
+│ Terminal: xterm-256color                             │
+│                                                      │
+│ CPU Cores: 12                                        │
+│ CPU: AMD Ryzen 5 5600 6-Core Processor               │
+│ CPU Speed: 3679 MHz                                  │
+│ GPU: NVIDIA TU106 [GeForce RTX 2060 Rev. A] (rev a1) │
+│                                                      │
+│ Memory: 10.24 GiB / 46.97 GiB                        │
+│ RAM         ━━━━━━━━━━━━━━━━━━━━━━━━━   21%          │
+│ Disk (/): 373.62 GiB / 413.80 GiB                    │
+│ Disk        ━━━━━━━━━━━━━━━━━━━━━━━━━   90%          │
+╰──────────────────────────────────────────────────────╯
 ```
 ---
 ![OxiFetch Image](https://github.com/AK1R4S4T0H/OxiFetch/blob/main/pics/oxif.png?raw=true)
