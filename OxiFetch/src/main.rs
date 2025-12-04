@@ -9,49 +9,125 @@ use sys_info::{cpu_num, cpu_speed, hostname, mem_info, os_release, os_type};
 use users::os::unix::UserExt;
 use users::{get_current_uid, get_user_by_uid};
 
+// ANSI Color Codes
+#[derive(Clone)]
+struct ColorTheme {
+    primary: &'static str,
+    secondary: &'static str,
+    accent: &'static str,
+    reset: &'static str,
+}
+
+impl ColorTheme {
+    fn cyan() -> Self {
+        Self {
+            primary: "\x1b[38;5;51m",      // Bright cyan
+            secondary: "\x1b[38;5;87m",    // Light cyan
+            accent: "\x1b[38;5;123m",      // Pale cyan
+            reset: "\x1b[0m",
+        }
+    }
+
+    fn turquoise() -> Self {
+        Self {
+            primary: "\x1b[38;5;80m",      // Turquoise
+            secondary: "\x1b[38;5;86m",    // Light turquoise
+            accent: "\x1b[38;5;122m",      // Pale turquoise
+            reset: "\x1b[0m",
+        }
+    }
+
+    fn pink() -> Self {
+        Self {
+            primary: "\x1b[38;5;198m",     // Hot pink
+            secondary: "\x1b[38;5;213m",   // Light pink
+            accent: "\x1b[38;5;219m",      // Pale pink
+            reset: "\x1b[0m",
+        }
+    }
+
+    fn purple() -> Self {
+        Self {
+            primary: "\x1b[38;5;135m",     // Purple
+            secondary: "\x1b[38;5;141m",   // Light purple
+            accent: "\x1b[38;5;183m",      // Pale purple
+            reset: "\x1b[0m",
+        }
+    }
+
+    fn dark_pink() -> Self {
+        Self {
+            primary: "\x1b[38;5;162m",     // Dark pink
+            secondary: "\x1b[38;5;168m",   // Medium pink
+            accent: "\x1b[38;5;175m",      // Light pink
+            reset: "\x1b[0m",
+        }
+    }
+
+    fn get_theme(name: &str) -> Self {
+        match name.to_lowercase().as_str() {
+            "cyan" => Self::cyan(),
+            "turquoise" | "teal" => Self::turquoise(),
+            "pink" => Self::pink(),
+            "purple" | "violet" => Self::purple(),
+            "dark-pink" | "darkpink" => Self::dark_pink(),
+            _ => Self::cyan(), // Default
+        }
+    }
+}
+
 /// System uptime in hours and minutes
 fn get_uptime() -> Result<String, Box<dyn Error>> {
     let uptime_content = fs::read_to_string("/proc/uptime")?;
     let uptime_seconds = uptime_content
-        .split_whitespace()
-        .next()
-        .unwrap_or("0")
-        .parse::<f64>()
-        .unwrap_or(0.0);
-    let hours = (uptime_seconds / 3600.0).floor();
+    .split_whitespace()
+    .next()
+    .ok_or("Invalid uptime format")?
+    .parse::<f64>()?;
+
+    let days = (uptime_seconds / 86400.0).floor();
+    let hours = ((uptime_seconds % 86400.0) / 3600.0).floor();
     let minutes = ((uptime_seconds % 3600.0) / 60.0).floor();
-    Ok(format!("{:.0} hours, {:.0} minutes", hours, minutes))
+
+    if days > 0.0 {
+        Ok(format!("{}d {}h {}m", days, hours, minutes))
+    } else if hours > 0.0 {
+        Ok(format!("{}h {}m", hours, minutes))
+    } else {
+        Ok(format!("{}m", minutes))
+    }
 }
 
 /// Get desktop manager type
 fn get_desktop_manager() -> String {
-    if let Ok(wm) = env::var("XDG_SESSION_DESKTOP") {
-        return wm;
-    }
-    "Unknown".to_string()
+    env::var("XDG_SESSION_DESKTOP")
+    .or_else(|_| env::var("GDMSESSION"))
+    .unwrap_or_else(|_| "Unknown".to_string())
 }
 
 /// Get desktop environment
 fn get_desktop_environment() -> String {
-    if let Ok(session) = env::var("XDG_CURRENT_DESKTOP") {
-        return session;
-    }
-    if let Ok(session) = env::var("DESKTOP_SESSION") {
-        return session;
-    }
-    "Unknown".to_string()
+    env::var("XDG_CURRENT_DESKTOP")
+    .or_else(|_| env::var("DESKTOP_SESSION"))
+    .or_else(|_| env::var("XDG_SESSION_TYPE"))
+    .unwrap_or_else(|_| "Unknown".to_string())
 }
 
+/// Get CPU type from /proc/cpuinfo
 fn get_cpu_type() -> Result<String, Box<dyn Error>> {
     let cpu_info = fs::read_to_string("/proc/cpuinfo")?;
     for line in cpu_info.lines() {
         if line.starts_with("model name") {
-            return Ok(line
-                .split(':')
-                .nth(1)
-                .unwrap_or("Unknown")
-                .trim()
-                .to_string());
+            if let Some(name) = line.split(':').nth(1) {
+                let trimmed = name.trim();
+                // Clean up CPU name
+                let cleaned = trimmed
+                .replace("(R)", "")
+                .replace("(TM)", "")
+                .replace("(tm)", "")
+                .replace("  ", " ");
+                return Ok(cleaned);
+            }
         }
     }
     Ok("Unknown".to_string())
@@ -62,11 +138,9 @@ fn get_distro() -> Result<String, Box<dyn Error>> {
     let os_release_content = fs::read_to_string("/etc/os-release")?;
     for line in os_release_content.lines() {
         if line.starts_with("PRETTY_NAME") {
-            return Ok(line
-                .split('=')
-                .nth(1)
-                .unwrap_or("Unknown")
-                .replace("\"", ""));
+            if let Some(value) = line.split('=').nth(1) {
+                return Ok(value.trim_matches('"').to_string());
+            }
         }
     }
     Ok("Unknown".to_string())
@@ -74,35 +148,40 @@ fn get_distro() -> Result<String, Box<dyn Error>> {
 
 /// Current shell
 fn get_shell() -> String {
-    if let Some(user) = get_user_by_uid(get_current_uid()) {
-        user.shell().to_string_lossy().into_owned()
-    } else {
-        "Unknown".to_string()
-    }
+    get_user_by_uid(get_current_uid())
+    .and_then(|user| {
+        user.shell()
+        .to_string_lossy()
+        .split('/')
+        .last()
+        .map(|s| s.to_string())
+    })
+    .unwrap_or_else(|| "Unknown".to_string())
 }
 
 /// Get Terminal Name
 fn get_terminal_name() -> String {
-    match env::var("TERM") {
-        Ok(term) => term,
-        Err(_) => "Unknown".to_string(),
-    }
+    env::var("TERM_PROGRAM")
+    .or_else(|_| env::var("TERM"))
+    .unwrap_or_else(|_| "Unknown".to_string())
 }
 
 /// Get GPU Information
 fn get_gpu_info() -> Result<String, String> {
     let output = Command::new("lspci")
-        .arg("-nn")
-        .arg("-v")
-        .output()
-        .map_err(|e| format!("Failed to execute lspci: {}", e))?;
+    .output()
+    .map_err(|e| format!("Failed to execute lspci: {}", e))?;
 
     let output_str = String::from_utf8_lossy(&output.stdout);
 
     for line in output_str.lines() {
-        if line.contains("VGA compatible controller") {
+        if line.contains("VGA compatible controller") || line.contains("3D controller") {
             if let Some(gpu_info) = line.split(':').nth(2) {
-                return Ok(gpu_info.trim().to_string());
+                let cleaned = gpu_info
+                .trim()
+                .replace("Corporation", "")
+                .replace("  ", " ");
+                return Ok(cleaned);
             }
         }
     }
@@ -110,272 +189,490 @@ fn get_gpu_info() -> Result<String, String> {
     Err("GPU information not found".to_string())
 }
 
-/// Draw a horizontal line for a chart
-// fn draw_horizontal_bar(label: &str, value: u64, max: u64) {
-//    let bar_length = 20; // Length of the bar
-//    let filled_length = (value as f64 / max as f64 * bar_length as f64) as usize;
-//    let empty_length = bar_length - filled_length;
-//
-//    let filled_bar = "=".repeat(filled_length);
-//    let empty_bar = " ".repeat(empty_length);
-//
-//    println!("{:<12} [{}{}] {:>3}%", label, filled_bar, empty_bar, (value * 100 / max));
-//}
+/// Get package count (attempts multiple package managers)
+fn get_package_count() -> String {
+    let managers = [
+        ("dpkg", vec!["--get-selections"]),
+        ("rpm", vec!["-qa"]),
+        ("pacman", vec!["-Q"]),
+        ("flatpak", vec!["list", "--app"]),
+    ];
 
-/// Draw a box with content
-fn draw_box(content: &str) {
-    let width = content.lines().map(|line| line.len()).max().unwrap_or(0);
-    let border = "+".to_string() + &"-".repeat(width + 2) + "+";
-
-    println!("{}", border);
-    for line in content.lines() {
-        println!("| {}{} |", line, " ".repeat(width - line.len()));
+    for (cmd, args) in &managers {
+        if let Ok(output) = Command::new(cmd).args(args).output() {
+            if output.status.success() {
+                let count = String::from_utf8_lossy(&output.stdout)
+                .lines()
+                .filter(|line| !line.trim().is_empty())
+                .count();
+                if count > 0 {
+                    return format!("{} ({})", count, cmd);
+                }
+            }
+        }
     }
-    println!("{}", border);
+
+    "Unknown".to_string()
 }
 
-fn display_ascii_logo() {
-    let logo = r#"
-    ██████╗ ██╗  ██╗██╗███████╗███████╗████████╗ ██████╗██╗  ██╗
-    ██╔═══██╗╚██╗██╔╝██║██╔════╝██╔════╝╚══██╔══╝██╔════╝██║  ██║
-    ██║   ██║ ╚███╔╝ ██║█████╗  █████╗     ██║   ██║     ███████║
-    ██║   ██║ ██╔██╗ ██║██╔══╝  ██╔══╝     ██║   ██║     ██╔══██║
-    ╚██████╔╝██╔╝ ██╗██║██║     ███████╗   ██║   ╚██████╗██║  ██║
-     ╚═════╝ ╚═╝  ╚═╝╚═╝╚═╝     ╚══════╝   ╚═╝    ╚═════╝╚═╝  ╚═╝
-    "#;
+/// Get disk usage for root partition
+fn get_disk_usage() -> Result<(u64, u64), Box<dyn Error>> {
+    let output = Command::new("df")
+    .args(&["-B1", "/"])
+    .output()?;
+
+    let output_str = String::from_utf8_lossy(&output.stdout);
+
+    for line in output_str.lines().skip(1) {
+        let parts: Vec<&str> = line.split_whitespace().collect();
+        if parts.len() >= 3 {
+            let total = parts[1].parse::<u64>()?;
+            let used = parts[2].parse::<u64>()?;
+            return Ok((used, total));
+        }
+    }
+
+    Err("Could not parse disk usage".into())
+}
+
+/// Draw a horizontal bar chart with color
+fn draw_horizontal_bar(label: &str, used: u64, total: u64, width: usize, theme: &ColorTheme) -> String {
+    let percentage = (used as f64 / total as f64 * 100.0) as usize;
+    let filled = (percentage * width / 100).min(width);
+    let empty = width - filled;
+
+    format!(
+        "{}{:<10}{}  {}{}{}{}{}  {:>3}%",
+        theme.secondary,
+        label,
+        theme.reset,
+        theme.primary,
+        "━".repeat(filled),
+            theme.accent,
+            "━".repeat(empty),
+            theme.reset,
+            percentage
+    )
+}
+
+/// Draw a box with content and colored borders
+fn draw_box(content: &str, theme: &ColorTheme) {
+    let width = content
+    .lines()
+    .map(|line| {
+        // Strip ANSI codes for width calculation
+        let stripped = strip_ansi_codes(line);
+        stripped.chars().count()
+    })
+    .max()
+    .unwrap_or(0);
+
+    let border_top = format!("{}╭{}╮{}", theme.primary, "─".repeat(width + 2), theme.reset);
+    let border_bottom = format!("{}╰{}╯{}", theme.primary, "─".repeat(width + 2), theme.reset);
+
+    println!("{}", border_top);
+    for line in content.lines() {
+        let stripped = strip_ansi_codes(line);
+        let padding = width.saturating_sub(stripped.chars().count());
+        println!("{}│{} {}{} {}│{}",
+                 theme.primary, theme.reset, line, " ".repeat(padding), theme.primary, theme.reset);
+    }
+    println!("{}", border_bottom);
+}
+
+/// Strip ANSI color codes for accurate length calculation
+fn strip_ansi_codes(s: &str) -> String {
+    let mut result = String::new();
+    let mut chars = s.chars().peekable();
+
+    while let Some(ch) = chars.next() {
+        if ch == '\x1b' {
+            if chars.peek() == Some(&'[') {
+                chars.next(); // consume '['
+                // Skip until we find a letter
+                while let Some(c) = chars.next() {
+                    if c.is_ascii_alphabetic() {
+                        break;
+                    }
+                }
+            }
+        } else {
+            result.push(ch);
+        }
+    }
+    result
+}
+
+/// Display ASCII logo or custom ASCII art
+fn display_ascii_logo(ascii_path: Option<&str>, theme: &ColorTheme) {
+    if let Some(path) = ascii_path {
+        if let Ok(content) = fs::read_to_string(path) {
+            // Display custom ASCII art with color
+            for line in content.lines() {
+                println!("{}{}{}", theme.primary, line, theme.reset);
+            }
+            return;
+        }
+    }
+
+    // Default logo with gradient colors
+    let logo = format!(
+        r#"
+        {}███████╗ {}██╗  ██╗{}██╗{}███████╗{}███████╗{}████████╗{}███████╗{}██╗  ██╗{}
+        {}██╔═══██╗{}╚██╗██╔╝{}██║{}██╔════╝{}██╔════╝{}╚══██╔══╝{}██╔════╝{}██║  ██║{}
+        {}██║   ██║{} ╚███╔╝ {}██║{}█████╗  {}█████╗  {}   ██║   {}██║     {}███████║{}
+        {}██║   ██║{} ██╔██╗ {}██║{}██╔══╝  {}██╔══╝  {}   ██║   {}██║     {}██╔══██║{}
+        {}╚██████╔╝{}██╔╝ ██╗{}██║{}██║     {}███████╗{}   ██║   {}███████╗{}██║  ██║{}
+        {} ╚═════╝ {}╚═╝  ╚═╝{}╚═╝{}╚═╝     {}╚══════╝{}   ╚═╝   {}╚══════╝{}╚═╝  ╚═╝{}
+        "#,
+        theme.primary, theme.secondary, theme.accent, theme.secondary, theme.accent, theme.secondary, theme.accent, theme.secondary, theme.reset,
+        theme.primary, theme.secondary, theme.accent, theme.secondary, theme.accent, theme.secondary, theme.accent, theme.secondary, theme.reset,
+        theme.primary, theme.secondary, theme.accent, theme.secondary, theme.accent, theme.secondary, theme.accent, theme.secondary, theme.reset,
+        theme.primary, theme.secondary, theme.accent, theme.secondary, theme.accent, theme.secondary, theme.accent, theme.secondary, theme.reset,
+        theme.primary, theme.secondary, theme.accent, theme.secondary, theme.accent, theme.secondary, theme.accent, theme.secondary, theme.reset,
+        theme.primary, theme.secondary, theme.accent, theme.secondary, theme.accent, theme.secondary, theme.accent, theme.secondary, theme.reset,
+    );
 
     println!("{}", logo);
 }
 
-fn print_help() {
-    let help_message = r#"
-    Created By: AK1R4S4T0H
-    Usage: oxifetch [OPTION]
-    If run with No Options, then All Options will be used
-    Options:
-      -t, --os-type         Print the OS type.
-      -k, --os-release      Print the OS release.
-      -c, --cpu-num         Print the number of CPU cores.
-      -s, --cpu-speed       Print the CPU speed in MHz.
-      -m, --mem-info        Print memory information.
-      -hn, --hostname       Print the hostname.
-      -u, --uptime          Print system uptime.
-      -l, --shell           Print the current shell.
-      -g, --gpu             Print GPU information.
-      -term, --terminal     Print the terminal name.
-      -d, --desktop         Print the desktop environment.
-      -h, --help            Show this help message.
-      --check               Show Version Info
-    "#;
+fn print_help(theme: &ColorTheme) {
+    let help_message = format!(
+        "{}Created By: AK1R4S4T0H{}\n\
+{}Usage:{} oxifetch [OPTIONS]\n\
+\n\
+If run with no options, displays all system information.\n\
+\n\
+{}Options:{}\n\
+{}-t,  --os-type{}         Print the OS type\n\
+{}-k,  --os-release{}      Print the OS release/kernel version\n\
+{}-c,  --cpu-num{}         Print the number of CPU cores\n\
+{}-s,  --cpu-speed{}       Print the CPU speed in MHz\n\
+{}-m,  --mem-info{}        Print memory information with bar chart\n\
+{}-hn, --hostname{}        Print the hostname\n\
+{}-u,  --uptime{}          Print system uptime\n\
+{}-l,  --shell{}           Print the current shell\n\
+{}-g,  --gpu{}             Print GPU information\n\
+{}-term, --terminal{}      Print the terminal name\n\
+{}-d,  --desktop{}         Print the desktop environment\n\
+{}-p,  --packages{}        Print package count\n\
+{}-disk, --disk-usage{}    Print disk usage for root partition\n\
+{}-a,  --ascii <PATH>{}    Display custom ASCII art from file\n\
+{}-color, --theme <n>{}    Set color theme\n\
+{}(cyan, turquoise, pink, purple, dark-pink){}\n\
+{}-h,  --help{}            Show this help message\n\
+{}--check{}                Show version information\n\
+\n\
+{}Examples:{}\n\
+oxifetch                           {}# Show all info (default cyan){}\n\
+oxifetch -c -m -g                  {}# Show CPU, memory, and GPU{}\n\
+oxifetch -a logo.txt               {}# Use custom ASCII art{}\n\
+oxifetch --theme purple            {}# Use purple theme{}\n\
+oxifetch --theme pink -a logo.txt  {}# Custom art with pink theme{}",
+theme.primary, theme.reset,
+theme.secondary, theme.reset,
+theme.secondary, theme.reset,
+theme.accent, theme.reset,
+theme.accent, theme.reset,
+theme.accent, theme.reset,
+theme.accent, theme.reset,
+theme.accent, theme.reset,
+theme.accent, theme.reset,
+theme.accent, theme.reset,
+theme.accent, theme.reset,
+theme.accent, theme.reset,
+theme.accent, theme.reset,
+theme.accent, theme.reset,
+theme.accent, theme.reset,
+theme.accent, theme.reset,
+theme.accent, theme.reset,
+theme.accent, theme.reset,
+theme.secondary, theme.reset,
+theme.accent, theme.reset,
+theme.accent, theme.reset,
+theme.secondary, theme.reset,
+theme.accent, theme.reset,
+theme.accent, theme.reset,
+theme.accent, theme.reset,
+theme.accent, theme.reset,
+theme.accent, theme.reset,
+    );
 
-    draw_box(help_message);
+    draw_box(&help_message, theme);
 }
 
-fn display_all_info() -> Result<(), Box<dyn Error>> {
+fn display_all_info(theme: &ColorTheme) -> Result<(), Box<dyn Error>> {
     let mut content = String::new();
 
-    // OS Type and Kernel Version
-    match os_type() {
-        Ok(os) => content.push_str(&format!("OS: {}\n", os)),
-        Err(e) => eprintln!("Failed to get OS type: {}", e),
+    // OS Type
+    if let Ok(os) = os_type() {
+        content.push_str(&format!("{}OS:{} {}\n", theme.secondary, theme.reset, os));
     }
 
-    match os_release() {
-        Ok(release) => content.push_str(&format!("Kernel: {}\n", release)),
-        Err(e) => eprintln!("Failed to get Kernel version: {}", e),
+    // Kernel Version
+    if let Ok(release) = os_release() {
+        content.push_str(&format!("{}Kernel:{} {}\n", theme.secondary, theme.reset, release));
     }
 
     // Distro
-    match get_distro() {
-        Ok(distro) => content.push_str(&format!("Distro: {}\n", distro)),
-        Err(e) => eprintln!("Failed to get distribution: {}", e),
+    if let Ok(distro) = get_distro() {
+        content.push_str(&format!("{}Distro:{} {}\n", theme.secondary, theme.reset, distro));
     }
 
     // Desktop Environment
-    content.push_str(&format!(
-        "Desktop Environment: {}\n",
-        get_desktop_environment()
-    ));
+    let de = get_desktop_environment();
+    if de != "Unknown" {
+        content.push_str(&format!("{}Desktop:{} {}\n", theme.secondary, theme.reset, de));
+    }
 
     // Desktop Manager
-    content.push_str(&format!("Desktop Manager: {}\n", get_desktop_manager()));
-
-    // Uptime
-    match get_uptime() {
-        Ok(uptime) => content.push_str(&format!("Uptime: {}\n", uptime)),
-        Err(e) => eprintln!("Failed to get uptime: {}", e),
-    }
-
-    // CPU Information
-    match cpu_num() {
-        Ok(cpus) => content.push_str(&format!("CPU Cores: {}\n", cpus)),
-        Err(e) => eprintln!("Failed to get CPU cores: {}", e),
-    }
-
-    match cpu_speed() {
-        Ok(speed) => content.push_str(&format!("CPU Speed: {} MHz\n", speed)),
-        Err(e) => eprintln!("Failed to get CPU speed: {}", e),
-    }
-
-    // CPU Type
-    match get_cpu_type() {
-        Ok(cpu) => content.push_str(&format!("CPU Type: {}\n", cpu)),
-        Err(e) => eprintln!("Failed to get CPU type: {}", e),
-    }
-
-    match get_gpu_info() {
-        Ok(gpu) => content.push_str(&format!("GPU: {}\n", gpu)),
-        Err(e) => eprintln!("Failed to get GPU info: {}", e),
-    }
-
-    // Memory Information
-    match mem_info() {
-        Ok(mem) => {
-            content.push_str(&format!(
-                "Memory: {:.2} GB / {:.2} GB\n",
-                (mem.avail as f64) / 1024.0 / 1024.0,
-                (mem.total as f64) / 1024.0 / 1024.0
-            ));
-
-            // memory usage chart
-            // draw_horizontal_bar("Memory", mem.avail as u64, mem.total as u64);
-        }
-        Err(e) => eprintln!("Failed to get Memory info: {}", e),
+    let dm = get_desktop_manager();
+    if dm != "Unknown" && dm != de {
+        content.push_str(&format!("{}WM:{} {}\n", theme.secondary, theme.reset, dm));
     }
 
     // Hostname
-    match hostname() {
-        Ok(name) => content.push_str(&format!("Hostname: {}\n", name)),
-        Err(e) => eprintln!("Failed to get Hostname: {}", e),
+    if let Ok(name) = hostname() {
+        content.push_str(&format!("{}Host:{} {}\n", theme.secondary, theme.reset, name));
     }
 
-    match get_terminal_name() {
-        term if !term.is_empty() => content.push_str(&format!("Terminal: {}\n", term)),
-        _ => content.push_str("Terminal: Unknown\n"),
+    // Uptime
+    if let Ok(uptime) = get_uptime() {
+        content.push_str(&format!("{}Uptime:{} {}\n", theme.secondary, theme.reset, uptime));
+    }
+
+    // Packages
+    let packages = get_package_count();
+    if packages != "Unknown" {
+        content.push_str(&format!("{}Packages:{} {}\n", theme.secondary, theme.reset, packages));
     }
 
     // Shell
-    content.push_str(&format!("Shell: {}\n", get_shell()));
+    content.push_str(&format!("{}Shell:{} {}\n", theme.secondary, theme.reset, get_shell()));
 
-    draw_box(&content);
+    // Terminal
+    let term = get_terminal_name();
+    if term != "Unknown" {
+        content.push_str(&format!("{}Terminal:{} {}\n", theme.secondary, theme.reset, term));
+    }
 
+    content.push_str("\n");
+
+    // CPU Information
+    if let Ok(cpus) = cpu_num() {
+        content.push_str(&format!("{}CPU Cores:{} {}\n", theme.secondary, theme.reset, cpus));
+    }
+
+    if let Ok(cpu) = get_cpu_type() {
+        content.push_str(&format!("{}CPU:{} {}\n", theme.secondary, theme.reset, cpu));
+    }
+
+    if let Ok(speed) = cpu_speed() {
+        content.push_str(&format!("{}CPU Speed:{} {} MHz\n", theme.secondary, theme.reset, speed));
+    }
+
+    // GPU
+    if let Ok(gpu) = get_gpu_info() {
+        content.push_str(&format!("{}GPU:{} {}\n", theme.secondary, theme.reset, gpu));
+    }
+
+    content.push_str("\n");
+
+    // Memory Information
+    if let Ok(mem) = mem_info() {
+        let used = mem.total - mem.avail;
+        content.push_str(&format!(
+            "{}Memory:{} {:.2} GiB / {:.2} GiB\n",
+            theme.secondary,
+            theme.reset,
+            (used as f64) / 1024.0 / 1024.0,
+                                  (mem.total as f64) / 1024.0 / 1024.0
+        ));
+
+        content.push_str(&format!(
+            "{}\n",
+            draw_horizontal_bar("RAM", used, mem.total, 25, theme)
+        ));
+    }
+
+    // Disk Usage
+    if let Ok((used, total)) = get_disk_usage() {
+        content.push_str(&format!(
+            "{}Disk (/):{} {:.2} GiB / {:.2} GiB\n",
+                                  theme.secondary,
+                                  theme.reset,
+                                  (used as f64) / 1024.0 / 1024.0 / 1024.0,
+                                  (total as f64) / 1024.0 / 1024.0 / 1024.0
+        ));
+
+        content.push_str(&format!(
+            "{}\n",
+            draw_horizontal_bar("Disk", used, total, 25, theme)
+        ));
+    }
+
+    draw_box(&content, theme);
     Ok(())
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
     let args: Vec<String> = env::args().collect();
 
-    display_ascii_logo();
+    // Parse theme flag
+    let mut theme_name = "cyan";
+    let mut ascii_path: Option<String> = None;
+    let mut i = 1;
 
-    if args.len() < 2 {
-        // No options provided, show all information
-        return display_all_info();
+    while i < args.len() {
+        match args[i].as_str() {
+            "-color" | "--theme" if i + 1 < args.len() => {
+                theme_name = &args[i + 1];
+                i += 2;
+            }
+            "-a" | "--ascii" if i + 1 < args.len() => {
+                ascii_path = Some(args[i + 1].clone());
+                i += 2;
+            }
+            _ => i += 1,
+        }
+    }
+
+    let theme = ColorTheme::get_theme(theme_name);
+
+    display_ascii_logo(ascii_path.as_deref(), &theme);
+
+    // Check if only theme/ascii flags were provided
+    let non_special_args = args.iter()
+    .skip(1)
+    .filter(|arg| {
+        !matches!(arg.as_str(), "-color" | "--theme" | "-a" | "--ascii")
+        && !ascii_path.as_ref().map_or(false, |p| p == arg.as_str())
+        && arg.as_str() != theme_name
+    })
+    .count();
+
+    if non_special_args == 0 {
+        return display_all_info(&theme);
     }
 
     // Collect flags
     let mut flags = std::collections::HashSet::new();
     for arg in &args[1..] {
-        flags.insert(arg.as_str());
+        if arg != "-color" && arg != "--theme" && arg != "-a" && arg != "--ascii"
+            && !ascii_path.as_ref().map_or(false, |p| p == arg)
+            && arg != theme_name
+            {
+                flags.insert(arg.as_str());
+            }
     }
 
     if flags.contains("--help") || flags.contains("-h") {
-        print_help();
-    } else if flags.contains("--check") {
-        // Print version information
-        const VERSION: &str = "0.0.7";
-        println!("OxiFetch Version: {}", VERSION);
-    } else {
-        let mut content = String::new();
+        print_help(&theme);
+        return Ok(());
+    }
 
-        // Process each flag
-        if flags.contains("--os-type") || flags.contains("-t") {
-            match os_type() {
-                Ok(os) => content.push_str(&format!("OS: {}\n", os)),
-                Err(e) => eprintln!("Failed to get OS type: {}", e),
-            }
+    if flags.contains("--check") {
+        const VERSION: &str = "0.2.0";
+        println!("{}OxiFetch Version:{} {}", theme.primary, theme.reset, VERSION);
+        return Ok(());
+    }
+
+    let mut content = String::new();
+
+    // Process flags
+    if flags.contains("-t") || flags.contains("--os-type") {
+        if let Ok(os) = os_type() {
+            content.push_str(&format!("{}OS:{} {}\n", theme.secondary, theme.reset, os));
         }
+    }
 
-        if flags.contains("--os-release") || flags.contains("-k") {
-            match os_release() {
-                Ok(release) => content.push_str(&format!("Kernel: {}\n", release)),
-                Err(e) => eprintln!("Failed to get Kernel version: {}", e),
-            }
+    if flags.contains("-k") || flags.contains("--os-release") {
+        if let Ok(release) = os_release() {
+            content.push_str(&format!("{}Kernel:{} {}\n", theme.secondary, theme.reset, release));
         }
+    }
 
-        if flags.contains("--cpu-num") || flags.contains("-c") {
-            match cpu_num() {
-                Ok(cpus) => content.push_str(&format!("CPU Cores: {}\n", cpus)),
-                Err(e) => eprintln!("Failed to get CPU cores: {}", e),
-            }
+    if flags.contains("-c") || flags.contains("--cpu-num") {
+        if let Ok(cpus) = cpu_num() {
+            content.push_str(&format!("{}CPU Cores:{} {}\n", theme.secondary, theme.reset, cpus));
         }
+    }
 
-        if flags.contains("--cpu-speed") || flags.contains("-s") {
-            match cpu_speed() {
-                Ok(speed) => content.push_str(&format!("CPU Speed: {} MHz\n", speed)),
-                Err(e) => eprintln!("Failed to get CPU speed: {}", e),
-            }
+    if flags.contains("-s") || flags.contains("--cpu-speed") {
+        if let Ok(speed) = cpu_speed() {
+            content.push_str(&format!("{}CPU Speed:{} {} MHz\n", theme.secondary, theme.reset, speed));
         }
+    }
 
-        if flags.contains("--gpu") || flags.contains("-g") {
-            match get_gpu_info() {
-                Ok(gpu) => content.push_str(&format!("GPU: {}\n", gpu)),
-                Err(e) => eprintln!("Failed to get GPU info: {}", e),
-            }
+    if flags.contains("-g") || flags.contains("--gpu") {
+        if let Ok(gpu) = get_gpu_info() {
+            content.push_str(&format!("{}GPU:{} {}\n", theme.secondary, theme.reset, gpu));
         }
+    }
 
-        if flags.contains("--mem-info") || flags.contains("-m") {
-            match mem_info() {
-                Ok(mem) => {
-                    content.push_str(&format!(
-                        "Memory: {:.2} GB / {:.2} GB\n",
-                        (mem.avail as f64) / 1024.0 / 1024.0,
-                        (mem.total as f64) / 1024.0 / 1024.0
-                    ));
-
-                    // memory usage bar
-                    // draw_horizontal_bar("Memory", mem.avail as u64, mem.total as u64);
-                }
-                Err(e) => eprintln!("Failed to get Memory info: {}", e),
-            }
-        }
-
-        if flags.contains("--hostname") || flags.contains("-hn") {
-            match hostname() {
-                Ok(name) => content.push_str(&format!("Hostname: {}\n", name)),
-                Err(e) => eprintln!("Failed to get Hostname: {}", e),
-            }
-        }
-
-        if flags.contains("--uptime") || flags.contains("-u") {
-            match get_uptime() {
-                Ok(uptime) => content.push_str(&format!("Uptime: {}\n", uptime)),
-                Err(e) => eprintln!("Failed to get uptime: {}", e),
-            }
-        }
-
-        if flags.contains("--shell") || flags.contains("-l") {
-            content.push_str(&format!("Shell: {}\n", get_shell()));
-        }
-
-        if flags.contains("--terminal") || flags.contains("-term") {
-            content.push_str(&format!("Terminal: {}\n", get_terminal_name()));
-        }
-
-        if flags.contains("--desktop") || flags.contains("-d") {
+    if flags.contains("-m") || flags.contains("--mem-info") {
+        if let Ok(mem) = mem_info() {
+            let used = mem.total - mem.avail;
             content.push_str(&format!(
-                "Desktop Environment: {}\n",
-                get_desktop_environment()
+                "{}Memory:{} {:.2} GiB / {:.2} GiB\n",
+                theme.secondary,
+                theme.reset,
+                (used as f64) / 1024.0 / 1024.0,
+                                      (mem.total as f64) / 1024.0 / 1024.0
+            ));
+            content.push_str(&format!(
+                "{}\n",
+                draw_horizontal_bar("RAM", used, mem.total, 25, &theme)
             ));
         }
+    }
 
-        if !content.is_empty() {
-            draw_box(&content);
+    if flags.contains("-disk") || flags.contains("--disk-usage") {
+        if let Ok((used, total)) = get_disk_usage() {
+            content.push_str(&format!(
+                "{}Disk (/):{} {:.2} GiB / {:.2} GiB\n",
+                                      theme.secondary,
+                                      theme.reset,
+                                      (used as f64) / 1024.0 / 1024.0 / 1024.0,
+                                      (total as f64) / 1024.0 / 1024.0 / 1024.0
+            ));
+            content.push_str(&format!(
+                "{}\n",
+                draw_horizontal_bar("Disk", used, total, 25, &theme)
+            ));
         }
+    }
 
-        // no valid flags
-        if flags.is_empty() {
-            return display_all_info();
+    if flags.contains("-hn") || flags.contains("--hostname") {
+        if let Ok(name) = hostname() {
+            content.push_str(&format!("{}Hostname:{} {}\n", theme.secondary, theme.reset, name));
         }
+    }
+
+    if flags.contains("-u") || flags.contains("--uptime") {
+        if let Ok(uptime) = get_uptime() {
+            content.push_str(&format!("{}Uptime:{} {}\n", theme.secondary, theme.reset, uptime));
+        }
+    }
+
+    if flags.contains("-l") || flags.contains("--shell") {
+        content.push_str(&format!("{}Shell:{} {}\n", theme.secondary, theme.reset, get_shell()));
+    }
+
+    if flags.contains("-term") || flags.contains("--terminal") {
+        content.push_str(&format!("{}Terminal:{} {}\n", theme.secondary, theme.reset, get_terminal_name()));
+    }
+
+    if flags.contains("-d") || flags.contains("--desktop") {
+        content.push_str(&format!("{}Desktop:{} {}\n", theme.secondary, theme.reset, get_desktop_environment()));
+    }
+
+    if flags.contains("-p") || flags.contains("--packages") {
+        content.push_str(&format!("{}Packages:{} {}\n", theme.secondary, theme.reset, get_package_count()));
+    }
+
+    if !content.is_empty() {
+        draw_box(&content, &theme);
     }
 
     Ok(())
