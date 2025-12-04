@@ -9,7 +9,7 @@ repository = "https://github.com/AK1R4S4T0H/OxiFetch"
 
 [dependencies]
 sys-info = "0.9"
-regex = "1.5"
+regex = "1.10"
 users = "0.11"
 
 [[bin]]
